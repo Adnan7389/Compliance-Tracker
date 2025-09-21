@@ -21,6 +21,9 @@ build/
 backend/*.http
 backend/*.rest
 
+#uploaded files
+uploads/
+
 #keeping sensitive information secure
 .env
 
