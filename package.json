@@ -15,6 +15,7 @@
     "test:controllers": "NODE_ENV=test node --experimental-vm-modules node_modules/jest/bin/jest.js tests/controllers/",
     "test:routes": "NODE_ENV=test node --experimental-vm-modules node_modules/jest/bin/jest.js tests/routes/",
     "test:middleware": "NODE_ENV=test node --experimental-vm-modules node_modules/jest/bin/jest.js tests/middleware/",
+    "test:integration:file": "NODE_ENV=test TEST_TYPE=integration node --experimental-vm-modules node_modules/jest/bin/jest.js $1 --verbose",
     "test:watch": "NODE_ENV=test node --experimental-vm-modules node_modules/jest/bin/jest.js --watch",
     "test:coverage": "NODE_ENV=test node --experimental-vm-modules node_modules/jest/bin/jest.js --coverage"
   },
