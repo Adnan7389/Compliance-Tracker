@@ -46,6 +46,7 @@ CREATE TABLE compliance_tasks (
   status TEXT CHECK (status IN ('pending','completed')) DEFAULT 'pending',
   created_by INT REFERENCES users(id),
   created_at TIMESTAMP DEFAULT now(),
+  updated_at TIMESTAMP DEFAULT now(),
   completed_at TIMESTAMP NULL
 );
 
@@ -63,7 +64,7 @@ CREATE TABLE documents (
   mime_type VARCHAR(100),
   uploaded_by INTEGER NOT NULL REFERENCES users(id),
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+  updated_at TIMESTAMP DEFAULT now()
 );
 
 -- Index for better performance
@@ -81,3 +82,24 @@ CREATE TABLE blacklisted_tokens (
 );
 
 CREATE INDEX idx_blacklisted_tokens_expires ON blacklisted_tokens(expires_at);
+
+-- ===============================
+-- Triggers for updated_at
+-- ===============================
+CREATE OR REPLACE FUNCTION update_updated_at_column()
+RETURNS TRIGGER AS $$
+BEGIN
+   NEW.updated_at = now();
+   RETURN NEW;
+END;
+$$ language 'plpgsql';
+
+CREATE TRIGGER update_compliance_tasks_updated_at
+  BEFORE UPDATE ON compliance_tasks
+  FOR EACH ROW
+  EXECUTE PROCEDURE update_updated_at_column();
+
+CREATE TRIGGER update_documents_updated_at
+  BEFORE UPDATE ON documents
+  FOR EACH ROW
+  EXECUTE PROCEDURE update_updated_at_column();
