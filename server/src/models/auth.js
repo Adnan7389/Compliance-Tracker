@@ -1,0 +1,60 @@
+import pool from '../db.js';
+
+export const AuthModel = {
+  // Create a new user
+  async createUser(userData) {
+    const { name, email, password_hash, role } = userData;
+    const query = `
+      INSERT INTO users (name, email, password_hash, role) 
+      VALUES ($1, $2, $3, $4) 
+      RETURNING id, name, email, role, business_id
+    `;
+    const result = await pool.query(query, [name, email, password_hash, role]);
+    return result.rows[0];
+  },
+
+  // Create a new business
+  async createBusiness(businessData) {
+    const { name, owner_id } = businessData;
+    const query = `
+      INSERT INTO businesses (name, owner_id) 
+      VALUES ($1, $2) 
+      RETURNING id, name, owner_id
+    `;
+    const result = await pool.query(query, [name, owner_id]);
+    return result.rows[0];
+  },
+
+  // Update user's business_id
+  async updateUserBusinessId(userId, businessId) {
+    const query = `
+      UPDATE users SET business_id = $1 
+      WHERE id = $2 
+      RETURNING id, business_id
+    `;
+    const result = await pool.query(query, [businessId, userId]);
+    return result.rows[0];
+  },
+
+  // Find user by email
+  async findUserByEmail(email) {
+    const query = `
+      SELECT id, name, email, password_hash, role, business_id 
+      FROM users 
+      WHERE email = $1
+    `;
+    const result = await pool.query(query, [email]);
+    return result.rows[0];
+  },
+
+  // Find user by ID
+  async findUserById(id) {
+    const query = `
+      SELECT id, name, email, role, business_id 
+      FROM users 
+      WHERE id = $1
+    `;
+    const result = await pool.query(query, [id]);
+    return result.rows[0];
+  }
+};
