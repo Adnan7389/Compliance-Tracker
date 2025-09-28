@@ -1,5 +1,5 @@
 import jwt from 'jsonwebtoken';
-import pool from '../db.js';
+import {pool} from '../config/db.js';
 
 // Main authentication middleware
 export function authenticate(req, res, next) {
