@@ -51,7 +51,7 @@ export const authController = {
       await AuthModel.updateUserBusinessId(user.id, business.id);
 
       // 4) Generate JWT token
-      const token = jwt.default.sign(
+      const token = jwt.sign(
         { 
           userId: user.id, 
           businessId: business.id, 
@@ -114,7 +114,7 @@ export const authController = {
       }
 
       // Generate JWT token
-      const token = jwt.default.sign(
+      const token = jwt.sign(
         { 
           userId: user.id, 
           businessId: user.business_id, 
@@ -180,7 +180,7 @@ export const authController = {
       
       if (token) {
         // Decode token to get expiration
-        const decoded = jwt.default.decode(token);
+        const decoded = jwt.decode(token);
         if (decoded && decoded.exp) {
           // Add to blacklist until token expires
           const expiresAt = new Date(decoded.exp * 1000);
