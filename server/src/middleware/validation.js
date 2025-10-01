@@ -56,6 +56,107 @@ export const validateStaffId = [
     .withMessage('Staff ID must be a positive integer')
 ];
 
+// Task validations
+export const validateTaskCreation = [
+  body('title')
+    .trim()
+    .isLength({ min: 3, max: 200 })
+    .withMessage('Title must be between 3 and 200 characters'),
+  
+  body('description')
+    .optional()
+    .trim()
+    .isLength({ max: 1000 })
+    .withMessage('Description must not exceed 1000 characters'),
+  
+  body('category')
+    .trim()
+    .isLength({ min: 2, max: 50 })
+    .withMessage('Category must be between 2 and 50 characters'),
+  
+  body('due_date')
+    .isISO8601()
+    .withMessage('Due date must be a valid date')
+    .custom((value) => {
+      if (new Date(value) < new Date()) {
+        throw new Error('Due date cannot be in the past');
+      }
+      return true;
+    }),
+  
+  body('assigned_to')
+    .isInt({ min: 1 })
+    .withMessage('Assigned staff ID must be a positive integer'),
+  
+  body('recurrence')
+    .optional()
+    .isIn(['none', 'daily', 'weekly', 'monthly', 'quarterly', 'yearly'])
+    .withMessage('Invalid recurrence value')
+];
+
+export const validateTaskUpdate = [
+  body('title')
+    .optional()
+    .trim()
+    .isLength({ min: 3, max: 200 })
+    .withMessage('Title must be between 3 and 200 characters'),
+  
+  body('description')
+    .optional()
+    .trim()
+    .isLength({ max: 1000 })
+    .withMessage('Description must not exceed 1000 characters'),
+  
+  body('category')
+    .optional()
+    .trim()
+    .isLength({ min: 2, max: 50 })
+    .withMessage('Category must be between 2 and 50 characters'),
+  
+  body('due_date')
+    .optional()
+    .isISO8601()
+    .withMessage('Due date must be a valid date'),
+  
+  body('assigned_to')
+    .optional()
+    .isInt({ min: 1 })
+    .withMessage('Assigned staff ID must be a positive integer'),
+  
+  body('status')
+    .optional()
+    .isIn(['pending', 'in_progress', 'completed', 'cancelled'])
+    .withMessage('Invalid status value'),
+  
+  body('recurrence')
+    .optional()
+    .isIn(['none', 'daily', 'weekly', 'monthly', 'quarterly', 'yearly'])
+    .withMessage('Invalid recurrence value')
+];
+
+export const validateTaskId = [
+  param('id')
+    .isInt({ min: 1 })
+    .withMessage('Task ID must be a positive integer')
+];
+
+export const validateTaskQuery = [
+  query('status')
+    .optional()
+    .isIn(['pending', 'in_progress', 'completed', 'cancelled'])
+    .withMessage('Invalid status filter'),
+  
+  query('overdue')
+    .optional()
+    .isIn(['true', 'false'])
+    .withMessage('Overdue filter must be true or false'),
+  
+  query('assigned_to')
+    .optional()
+    .isInt({ min: 1 })
+    .withMessage('Assigned to filter must be a positive integer')
+];
+
 // Validation result handler
 export const handleValidationErrors = (req, res, next) => {
   const errors = validationResult(req);
