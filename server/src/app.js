@@ -3,7 +3,7 @@ import dotenv from "dotenv";
 import cors from "cors";
 import authRoutes from "./routes/authRoutes.js";
 import staffRoutes from "./routes/staffRoutes.js";
-// import taskRoutes from "./routes/taskRoutes.js";
+import taskRoutes from "./routes/taskRoutes.js";
 import { errorHandler, notFound } from './middleware/errorHandler.js';
 
 dotenv.config();
@@ -15,7 +15,7 @@ app.use(express.json());
 // // Routes
 app.use("/api/auth", authRoutes);
 app.use("/api/staff", staffRoutes);
-// app.use("/api/tasks", taskRoutes);
+app.use("/api/tasks", taskRoutes);
 
 // Error handling
 app.use(notFound);
