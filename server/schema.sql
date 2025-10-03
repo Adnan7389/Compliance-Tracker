@@ -55,9 +55,16 @@ CREATE INDEX idx_tasks_assigned ON compliance_tasks (assigned_to);
 -- Documents
 CREATE TABLE documents (
   id SERIAL PRIMARY KEY,
-  task_id INT REFERENCES compliance_tasks(id) ON DELETE CASCADE,
-  file_url TEXT NOT NULL,
-  filename TEXT,
-  uploaded_by INT REFERENCES users(id),
-  uploaded_at TIMESTAMP DEFAULT now()
+  task_id INTEGER NOT NULL REFERENCES compliance_tasks(id) ON DELETE CASCADE,
+  file_url VARCHAR(500) NOT NULL,
+  filename VARCHAR(255) NOT NULL,
+  file_size INTEGER NOT NULL,
+  mime_type VARCHAR(100),
+  uploaded_by INTEGER NOT NULL REFERENCES users(id),
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+
+-- Index for better performance
+CREATE INDEX idx_documents_task_id ON documents(task_id);
+CREATE INDEX idx_documents_uploaded_by ON documents(uploaded_by);
