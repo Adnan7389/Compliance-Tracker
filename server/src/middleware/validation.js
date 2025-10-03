@@ -157,6 +157,12 @@ export const validateTaskQuery = [
     .withMessage('Assigned to filter must be a positive integer')
 ];
 
+export const validateDocumentId = [
+  param('id')
+    .isInt({ min: 1 })
+    .withMessage('Document ID must be a positive integer')
+];
+
 // Validation result handler
 export const handleValidationErrors = (req, res, next) => {
   const errors = validationResult(req);
