@@ -5,7 +5,9 @@ import authRoutes from "./routes/authRoutes.js";
 import staffRoutes from "./routes/staffRoutes.js";
 import taskRoutes from "./routes/taskRoutes.js";
 import documentRoutes from './routes/documentRoutes.js';
+import testRoutes from './routes/testRoutes.js'; // Add this line
 import { errorHandler, notFound } from './middleware/errorHandler.js';
+import cronService from './services/cronService.js'; // Add this line
 
 dotenv.config();
 const app = express();
@@ -18,6 +20,10 @@ app.use("/api/auth", authRoutes);
 app.use("/api/staff", staffRoutes);
 app.use("/api/tasks", taskRoutes);
 app.use('/api', documentRoutes);
+app.use('/api', testRoutes); // Add this line
+
+// Initialize cron jobs
+cronService.init(); // Add this line
 
 // Error handling
 app.use(notFound);
@@ -28,4 +34,8 @@ app.get("/", (req, res) => {
 });
 
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+app.listen(PORT, () => {
+  console.log(`🚀 Server running on port ${PORT}`);
+  console.log(`📧 Email service: ${process.env.SMTP_USER ? 'Configured' : 'Not configured'}`);
+  console.log(`⏰ Cron jobs: ${process.env.NODE_ENV === 'production' ? 'Enabled' : 'Disabled'}`);
+});
