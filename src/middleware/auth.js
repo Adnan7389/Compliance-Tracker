@@ -1,4 +1,4 @@
-import jwt from 'jsonwebtoken';
+import * as jwt from 'jsonwebtoken';
 import {pool} from '../config/db.js';
 
 // Main authentication middleware
@@ -113,7 +113,9 @@ export async function ensureTaskBelongsToBusiness(req, res, next) {
     req.task = rows[0];
     next();
   } catch (error) {
-    console.error('Task validation error:', error);
+    if (process.env.NODE_ENV !== 'test') {
+      console.error('Task validation error:', error);
+    }
     res.status(500).json({ message: 'Internal server error' });
   }
 }
@@ -144,7 +146,9 @@ export async function ensureUserBelongsToBusiness(req, res, next) {
     req.targetUser = rows[0];
     next();
   } catch (error) {
-    console.error('User validation error:', error);
+    if (process.env.NODE_ENV !== 'test') {
+      console.error('User validation error:', error);
+    }
     res.status(500).json({ message: 'Internal server error' });
   }
 }
@@ -200,7 +204,9 @@ export async function validateBusinessContext(req, res, next) {
     req.business = rows[0];
     next();
   } catch (error) {
-    console.error('Business validation error:', error);
+    if (process.env.NODE_ENV !== 'test') {
+      console.error('Business validation error:', error);
+    }
     res.status(500).json({ message: 'Internal server error' });
   }
 }
