@@ -1,6 +1,6 @@
-# Compliance Tracker
+# Compliance Tracker Back-end
 
-A full-stack application to help businesses track and manage their compliance tasks.
+This is the back-end for the Compliance Tracker application. It is a Node.js application built with Express, and it uses PostgreSQL for the database.
 
 ## Features
 
@@ -15,21 +15,12 @@ A full-stack application to help businesses track and manage their compliance ta
 
 ## Technologies Used
 
-### Frontend
-
-*   React
-*   Vite
-*   Tailwind CSS
-*   Axios
-*   React Router
-
-### Backend
-
 *   Node.js
 *   Express
 *   PostgreSQL
 *   JWT for authentication
 *   bcryptjs for password hashing
+*   Jest for testing
 
 ## Getting Started
 
@@ -50,29 +41,21 @@ A full-stack application to help businesses track and manage their compliance ta
 2.  **Install server dependencies:**
 
     ```bash
-    cd server
     npm install
     ```
 
-3.  **Install client dependencies:**
-
-    ```bash
-    cd ../client
-    npm install
-    ```
-
-4.  **Set up the database:**
+3.  **Set up the database:**
 
     *   Create a PostgreSQL database.
     *   Connect to the database and run the `schema.sql` file to create the tables.
 
     ```bash
-    psql -U your_username -d your_database_name -f server/schema.sql
+    psql -U your_username -d your_database_name -f schema.sql
     ```
 
-5.  **Configure environment variables:**
+4.  **Configure environment variables:**
 
-    *   In the `server` directory, create a `.env` file and add the following:
+    *   Create a `.env` file in the root directory and add the following:
 
     ```
     DB_USER=your_postgres_user
@@ -88,20 +71,36 @@ A full-stack application to help businesses track and manage their compliance ta
 1.  **Start the server:**
 
     ```bash
-    cd server
     npm start
     ```
 
-2.  **Start the client:**
+    Or for development with auto-reloading:
 
     ```bash
-    cd ../client
     npm run dev
     ```
 
+## Testing
+
+To run the tests, use the following command:
+
+```bash
+npm test
+```
+
+You can also run specific test suites:
+
+```bash
+npm run test:db
+npm run test:models
+npm run test:controllers
+npm run test:routes
+npm run test:middleware
+```
+
 ## Database Schema
 
-The database schema is defined in `server/schema.sql`. It consists of the following tables:
+The database schema is defined in `schema.sql`. It consists of the following tables:
 
 *   `users`: Stores user information (both owners and staff).
 *   `businesses`: Stores business information.
