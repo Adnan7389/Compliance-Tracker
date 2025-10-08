@@ -51,7 +51,7 @@ export const authController = {
       await AuthModel.updateUserBusinessId(user.id, business.id);
 
       // 4) Generate JWT token
-      const token = jwt.sign(
+      const token = jwt.default.sign(
         { 
           userId: user.id, 
           businessId: business.id, 
@@ -114,7 +114,7 @@ export const authController = {
       }
 
       // Generate JWT token
-      const token = jwt.sign(
+      const token = jwt.default.sign(
         { 
           userId: user.id, 
           businessId: user.business_id, 
@@ -170,6 +170,33 @@ export const authController = {
       console.error('Profile error:', error);
       res.status(500).json({ 
         message: 'Internal server error' 
+      });
+    }
+  },
+
+  async logout(req, res) {
+    try {
+      const token = req.headers.authorization?.split(' ')[1];
+      
+      if (token) {
+        // Decode token to get expiration
+        const decoded = jwt.default.decode(token);
+        if (decoded && decoded.exp) {
+          // Add to blacklist until token expires
+          const expiresAt = new Date(decoded.exp * 1000);
+          await AuthModel.blacklistToken(token, expiresAt);
+        }
+      }
+      
+      res.json({
+        message: 'Logout successful',
+        logout: true
+      });
+
+    } catch (error) {
+      console.error('Logout error:', error);
+      res.status(500).json({
+        message: 'Logout failed'
       });
     }
   }
