@@ -3,6 +3,7 @@
 -- ================================
 
 -- Drop in reverse order (dependencies)
+DROP TABLE IF EXISTS blacklisted_tokens CASCADE;
 DROP TABLE IF EXISTS documents CASCADE;
 DROP TABLE IF EXISTS compliance_tasks CASCADE;
 DROP TABLE IF EXISTS businesses CASCADE;
@@ -68,3 +69,15 @@ CREATE TABLE documents (
 -- Index for better performance
 CREATE INDEX idx_documents_task_id ON documents(task_id);
 CREATE INDEX idx_documents_uploaded_by ON documents(uploaded_by);
+
+-- ===============================
+-- Token Blacklist for JWT Logout
+-- ===============================
+CREATE TABLE blacklisted_tokens (
+  id SERIAL PRIMARY KEY,
+  token TEXT NOT NULL UNIQUE,
+  expires_at TIMESTAMP NOT NULL,
+  blacklisted_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX idx_blacklisted_tokens_expires ON blacklisted_tokens(expires_at);
