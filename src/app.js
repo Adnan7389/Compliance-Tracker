@@ -10,7 +10,10 @@ import testRoutes from './routes/testRoutes.js';
 import { errorHandler, notFound } from './middleware/errorHandler.js';
 import cronService from './services/cronService.js';
 
-dotenv.config();
+if (process.env.NODE_ENV !== 'test') {
+  dotenv.config();
+}
+
 const app = express();
 
 app.use(cors());
@@ -35,9 +38,4 @@ app.get("/", (req, res) => {
   res.json({ message: "Compliance Tracker API is running 🚀" });
 });
 
-const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => {
-  console.log(`🚀 Server running on port ${PORT}`);
-  console.log(`📧 Email service: ${process.env.SMTP_USER ? 'Configured' : 'Not configured'}`);
-  console.log(`⏰ Cron jobs: ${process.env.NODE_ENV === 'production' ? 'Enabled' : 'Disabled'}`);
-});
+export { app };
