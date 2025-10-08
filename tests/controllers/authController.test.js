@@ -8,6 +8,8 @@ jest.unstable_mockModule('../../src/models/auth.js', () => ({
     createBusiness: jest.fn(),
     updateUserBusinessId: jest.fn(),
     findUserById: jest.fn(),
+    blacklistToken: jest.fn(),
+    isTokenBlacklisted: jest.fn(),
   }
 }));
 
@@ -21,7 +23,11 @@ jest.unstable_mockModule('bcrypt', () => ({
 }));
 
 jest.unstable_mockModule('jsonwebtoken', () => ({
-  sign: jest.fn(),
+  default: {
+    sign: jest.fn(),
+    decode: jest.fn(),
+    verify: jest.fn(),
+  },
 }));
 
 describe('Auth Controller', () => {
@@ -43,8 +49,9 @@ describe('Auth Controller', () => {
     const expressValidatorModule = await import('express-validator');
     expressValidator = expressValidatorModule;
 
-    const bcryptModule = await import('bcrypt');
-    bcrypt = bcryptModule;
+    // Get the mocked bcrypt module
+    const mockedBcrypt = await import('bcrypt');
+    bcrypt = mockedBcrypt;
 
     const jwtModule = await import('jsonwebtoken');
     jwt = jwtModule;
@@ -81,7 +88,7 @@ describe('Auth Controller', () => {
       AuthModel.createUser.mockResolvedValue({ id: 1, name: 'Test User', email: 'test@example.com', role: 'owner' });
       AuthModel.createBusiness.mockResolvedValue({ id: 1, name: 'Test Business' });
       AuthModel.updateUserBusinessId.mockResolvedValue({});
-      jwt.sign.mockReturnValue('test_token');
+      jwt.default.sign.mockReturnValue('test_token');
 
       await authController.register(req, res);
 
@@ -157,7 +164,7 @@ describe('Auth Controller', () => {
       expressValidator.validationResult.mockImplementation(() => ({ isEmpty: () => true, array: () => [] }));
       AuthModel.findUserByEmail.mockResolvedValue(user);
       bcrypt.compare.mockResolvedValue(true);
-      jwt.sign.mockReturnValue('test_token');
+      jwt.default.sign.mockReturnValue('test_token');
 
       await authController.login(req, res);
 
@@ -271,5 +278,39 @@ describe('Auth Controller', () => {
           message: 'Internal server error',
         });
       });
+  });
+
+  // Tests for logout method
+  describe('logout', () => {
+    beforeEach(() => {
+      req.headers = { authorization: 'Bearer test_token' };
+    });
+
+    it('should blacklist the token and return a success message', async () => {
+      jwt.default.decode.mockReturnValue({ exp: Date.now() / 1000 + 3600 }); // Token expires in 1 hour
+      AuthModel.blacklistToken.mockResolvedValue({});
+
+      await authController.logout(req, res);
+
+      expect(AuthModel.blacklistToken).toHaveBeenCalledWith(
+        'test_token',
+        expect.any(Date)
+      );
+      expect(res.json).toHaveBeenCalledWith({
+        message: 'Logout successful',
+        logout: true,
+      });
+    });
+
+    it('should return 500 on server error', async () => {
+      jwt.default.decode.mockImplementation(() => { throw new Error('Decode error'); });
+
+      await authController.logout(req, res);
+
+      expect(res.status).toHaveBeenCalledWith(500);
+      expect(res.json).toHaveBeenCalledWith({
+        message: 'Logout failed',
+      });
+    });
   });
 });
