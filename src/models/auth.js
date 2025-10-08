@@ -56,5 +56,22 @@ export const AuthModel = {
     `;
     const result = await pool.query(query, [id]);
     return result.rows[0];
+  },
+
+  // Blacklist a token
+  async blacklistToken(token, expiresAt) {
+    const query = `
+      INSERT INTO blacklisted_tokens (token, expires_at) 
+      VALUES ($1, $2) 
+      ON CONFLICT (token) DO NOTHING
+    `;
+    await pool.query(query, [token, expiresAt]);
+  },
+
+  // Check if token is blacklisted
+  async isTokenBlacklisted(token) {
+    const query = 'SELECT id FROM blacklisted_tokens WHERE token = $1';
+    const result = await pool.query(query, [token]);
+    return result.rows.length > 0;
   }
 };
