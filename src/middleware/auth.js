@@ -1,8 +1,9 @@
 import * as jwt from 'jsonwebtoken';
 import {pool} from '../config/db.js';
+import { AuthModel } from '../models/auth.js';
 
 // Main authentication middleware
-export function authenticate(req, res, next) {
+export async function authenticate(req, res, next) {
   const header = req.headers.authorization;
   if (!header) {
     return res.status(401).json({ message: 'No token provided' });
@@ -14,6 +15,12 @@ export function authenticate(req, res, next) {
   }
 
   try {
+    // Check if token is blacklisted
+    const isBlacklisted = await AuthModel.isTokenBlacklisted(token);
+    if (isBlacklisted) {
+      return res.status(401).json({ message: 'Token is invalid' });
+    }
+
     const payload = jwt.verify(token, process.env.JWT_SECRET);
     req.user = { 
       id: payload.userId, 
