@@ -1,4 +1,4 @@
-import * as jwt from 'jsonwebtoken';
+import jwt from 'jsonwebtoken';
 import {pool} from '../config/db.js';
 import { AuthModel } from '../models/auth.js';
 
@@ -130,7 +130,7 @@ export async function ensureTaskBelongsToBusiness(req, res, next) {
 // Ensure user belongs to same business (for staff management)
 export async function ensureUserBelongsToBusiness(req, res, next) {
   try {
-    const userId = req.params.userId || req.body.userId;
+    const userId = req.params.staffId || req.body.userId;
     
     if (!userId) {
       return res.status(400).json({ message: 'User ID required' });
