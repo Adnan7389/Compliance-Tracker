@@ -1,5 +1,5 @@
+import "./config/env.js";
 import express from "express";
-import dotenv from "dotenv";
 import cors from "cors";
 import authRoutes from "./routes/authRoutes.js";
 import staffRoutes from "./routes/staffRoutes.js";
@@ -10,16 +10,12 @@ import testRoutes from './routes/testRoutes.js';
 import { errorHandler, notFound } from './middleware/errorHandler.js';
 import cronService from './services/cronService.js';
 
-if (process.env.NODE_ENV !== 'test') {
-  dotenv.config();
-}
-
 const app = express();
 
 app.use(cors());
 app.use(express.json());
 
-// // Routes
+// Routes
 app.use("/api/auth", authRoutes);
 app.use("/api/staff", staffRoutes);
 app.use("/api/tasks", taskRoutes);
@@ -28,7 +24,7 @@ app.use('/api', testRoutes);
 app.use('/api', dashboardRoutes);
 
 // Initialize cron jobs
-cronService.init(); // Add this line
+cronService.init();
 
 // Error handling
 app.use(notFound);
