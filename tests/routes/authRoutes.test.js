@@ -8,6 +8,7 @@ jest.unstable_mockModule('../../src/controllers/authController.js', () => ({
     register: jest.fn(),
     login: jest.fn(),
     getProfile: jest.fn(),
+    logout: jest.fn(),
   },
 }));
 
@@ -292,6 +293,36 @@ describe('Auth Routes', () => {
       expect(res.body.message).toEqual('Internal server error');
       expect(authenticate).toHaveBeenCalled();
       expect(authController.getProfile).toHaveBeenCalled();
+    });
+  });
+
+  describe('POST /api/auth/logout', () => {
+    it('should call authController.logout and return a success message', async () => {
+      authController.logout.mockImplementation((req, res) => {
+        res.json({ message: 'Logout successful', logout: true });
+      });
+
+      const res = await request(app)
+        .post('/api/auth/logout')
+        .set('Authorization', 'Bearer test_token');
+
+      expect(res.statusCode).toEqual(200);
+      expect(res.body.message).toEqual('Logout successful');
+      expect(authController.logout).toHaveBeenCalled();
+    });
+
+    it('should return 500 on server error', async () => {
+      authController.logout.mockImplementation((req, res) => {
+        res.status(500).json({ message: 'Logout failed' });
+      });
+
+      const res = await request(app)
+        .post('/api/auth/logout')
+        .set('Authorization', 'Bearer test_token');
+
+      expect(res.statusCode).toEqual(500);
+      expect(res.body.message).toEqual('Logout failed');
+      expect(authController.logout).toHaveBeenCalled();
     });
   });
 });
