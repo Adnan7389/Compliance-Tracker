@@ -167,3 +167,4 @@ dist
 
 # logs
 *.log
+tests/routes/test-file.txt
