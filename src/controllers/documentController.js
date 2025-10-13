@@ -14,17 +14,14 @@ export const documentController = {
 
       const taskId = req.params.id;
       const userId = req.user.id;
+      const task = req.task; // from ensureTaskBelongsToBusiness
 
       // Verify user has permission to upload to this task
       // (owner or assigned staff can upload)
-      const canUpload = await DocumentModel.canUserAccessDocument(
-        null, // No document ID for new uploads
-        userId,
-        req.user.role,
-        req.user.businessId
-      );
+      const isOwner = req.user.role === 'owner';
+      const isAssignedStaff = req.user.role === 'staff' && task.assigned_to === userId;
 
-      if (!canUpload.canAccess) {
+      if (!isOwner && !isAssignedStaff) {
         // Clean up uploaded file if no permission
         fs.unlinkSync(req.file.path);
         return res.status(403).json({

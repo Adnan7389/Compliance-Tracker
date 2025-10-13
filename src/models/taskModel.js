@@ -153,7 +153,7 @@ export const TaskModel = {
 
     const query = `
       UPDATE compliance_tasks 
-      SET ${fields.join(', ')}, updated_at = CURRENT_TIMESTAMP
+      SET ${fields.join(', ')}
       WHERE id = $${paramCount}
       RETURNING *
     `;
