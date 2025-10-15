@@ -63,9 +63,15 @@ export const authController = {
         }
       );
 
+      res.cookie('token', token, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production', // Use secure cookies in production
+        sameSite: 'strict', // Prevent CSRF attacks
+        maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
+      });
+
       res.status(201).json({
         message: 'Owner registered successfully',
-        token,
         user: {
           id: user.id,
           name: user.name,
@@ -126,9 +132,15 @@ export const authController = {
         }
       );
 
+      res.cookie('token', token, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production', // Use secure cookies in production
+        sameSite: 'strict', // Prevent CSRF attacks
+        maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
+      });
+
       res.json({
         message: 'Login successful',
-        token,
         user: {
           id: user.id,
           name: user.name,
@@ -176,7 +188,7 @@ export const authController = {
 
   async logout(req, res) {
     try {
-      const token = req.headers.authorization?.split(' ')[1];
+      const { token } = req.cookies;
       
       if (token) {
         // Decode token to get expiration
@@ -188,6 +200,7 @@ export const authController = {
         }
       }
       
+      res.clearCookie('token');
       res.json({
         message: 'Logout successful',
         logout: true
