@@ -61,10 +61,13 @@ describe('Auth Controller', () => {
     req = {
       body: {},
       params: {},
+      cookies: {},
     };
     res = {
       json: jest.fn(),
       status: jest.fn(() => res),
+      cookie: jest.fn(),
+      clearCookie: jest.fn(),
     };
     // Reset mocks before each test
     jest.clearAllMocks();
@@ -92,10 +95,15 @@ describe('Auth Controller', () => {
 
       await authController.register(req, res);
 
+      expect(res.cookie).toHaveBeenCalledWith('token', 'test_token', {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'strict',
+        maxAge: 7 * 24 * 60 * 60 * 1000,
+      });
       expect(res.status).toHaveBeenCalledWith(201);
       expect(res.json).toHaveBeenCalledWith({
         message: 'Owner registered successfully',
-        token: 'test_token',
         user: {
           id: 1,
           name: 'Test User',
@@ -168,9 +176,14 @@ describe('Auth Controller', () => {
 
       await authController.login(req, res);
 
+      expect(res.cookie).toHaveBeenCalledWith('token', 'test_token', {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'strict',
+        maxAge: 7 * 24 * 60 * 60 * 1000,
+      });
       expect(res.json).toHaveBeenCalledWith({
         message: 'Login successful',
-        token: 'test_token',
         user: {
           id: 1,
           name: 'Test User',
@@ -283,7 +296,7 @@ describe('Auth Controller', () => {
   // Tests for logout method
   describe('logout', () => {
     beforeEach(() => {
-      req.headers = { authorization: 'Bearer test_token' };
+      req.cookies = { token: 'test_token' };
     });
 
     it('should blacklist the token and return a success message', async () => {
@@ -296,6 +309,7 @@ describe('Auth Controller', () => {
         'test_token',
         expect.any(Date)
       );
+      expect(res.clearCookie).toHaveBeenCalledWith('token');
       expect(res.json).toHaveBeenCalledWith({
         message: 'Logout successful',
         logout: true,
