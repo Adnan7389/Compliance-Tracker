@@ -67,7 +67,7 @@ describe('StaffController', () => {
       await staffController.createStaff(mockReq, mockRes);
 
       expect(StaffModel.checkEmailExists).toHaveBeenCalledWith('jane@test.com');
-      expect(bcrypt.hash).toHaveBeenCalledWith('Password123', 1);
+      expect(bcrypt.hash).toHaveBeenCalledWith('Password123', 10);
       expect(StaffModel.createStaff).toHaveBeenCalledWith({
         name: 'Jane Doe',
         email: 'jane@test.com',
