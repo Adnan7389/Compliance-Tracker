@@ -4,14 +4,9 @@ import { AuthModel } from '../models/auth.js';
 
 // Main authentication middleware
 export async function authenticate(req, res, next) {
-  const header = req.headers.authorization;
-  if (!header) {
-    return res.status(401).json({ message: 'No token provided' });
-  }
-
-  const token = header.split(' ')[1];
+  const { token } = req.cookies;
   if (!token) {
-    return res.status(401).json({ message: 'Malformed authorization header' });
+    return res.status(401).json({ message: 'No token provided' });
   }
 
   try {
