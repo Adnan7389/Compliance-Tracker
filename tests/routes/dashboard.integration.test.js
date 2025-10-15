@@ -45,14 +45,14 @@ describe('Dashboard Routes - Integration', () => {
     const ownerLoginRes = await request(app)
       .post('/api/auth/login')
       .send({ email: 'owner@dashboardtest.com', password: 'password123' });
-    ownerToken = ownerLoginRes.body.token;
+    ownerToken = ownerLoginRes.headers['set-cookie'];
   });
 
   describe('GET /api/dashboard', () => {
     it('should return complete dashboard data for an authenticated owner', async () => {
       const res = await request(app)
         .get('/api/dashboard')
-        .set('Authorization', `Bearer ${ownerToken}`);
+        .set('Cookie', ownerToken);
 
       expect(res.statusCode).toEqual(200);
       expect(res.body.data.stats).toHaveProperty('total_tasks');
@@ -80,7 +80,7 @@ describe('Dashboard Routes - Integration', () => {
     it('should return only statistics for an authenticated owner', async () => {
       const res = await request(app)
         .get('/api/dashboard/stats')
-        .set('Authorization', `Bearer ${ownerToken}`);
+        .set('Cookie', ownerToken);
 
       expect(res.statusCode).toEqual(200);
       expect(res.body.stats).toHaveProperty('total_tasks');
