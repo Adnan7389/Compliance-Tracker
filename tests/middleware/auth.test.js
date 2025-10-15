@@ -1,13 +1,21 @@
 import { jest } from '@jest/globals';
 
 // Mock dependencies
-jest.unstable_mockModule('jsonwebtoken', () => ({
-  verify: jest.fn(),
-}));
-
 jest.unstable_mockModule('../../src/config/db.js', () => ({
   pool: {
     query: jest.fn(),
+  },
+}));
+
+jest.unstable_mockModule('jsonwebtoken', () => ({
+  default: {
+    verify: jest.fn(),
+  },
+}));
+
+jest.unstable_mockModule('../../src/models/auth.js', () => ({
+  AuthModel: {
+    isTokenBlacklisted: jest.fn(),
   },
 }));
 
@@ -15,6 +23,7 @@ jest.unstable_mockModule('../../src/config/db.js', () => ({
 let authMiddleware;
 let jwt;
 let pool;
+let AuthModel;
 
 describe('Auth Middleware - authenticate', () => {
   let mockReq, mockRes, mockNext;
@@ -22,13 +31,16 @@ describe('Auth Middleware - authenticate', () => {
   beforeAll(async () => {
     process.env.JWT_SECRET = 'test_secret';
     authMiddleware = await import('../../src/middleware/auth.js');
-    jwt = await import('jsonwebtoken');
+    const jwtModule = await import('jsonwebtoken');
+    jwt = jwtModule.default;
     const dbModule = await import('../../src/config/db.js');
     pool = dbModule.pool;
+    const authModelModule = await import('../../src/models/auth.js');
+    AuthModel = authModelModule.AuthModel;
   });
 
   beforeEach(() => {
-    mockReq = { headers: {}, user: {} };
+    mockReq = { cookies: {}, user: {} };
     mockRes = {
       status: jest.fn().mockReturnThis(),
       json: jest.fn(),
@@ -37,55 +49,50 @@ describe('Auth Middleware - authenticate', () => {
     jest.clearAllMocks();
   });
 
-  it('should return 401 if no token is provided', () => {
-    authMiddleware.authenticate(mockReq, mockRes, mockNext);
+  it('should return 401 if no token is provided', async () => {
+    await authMiddleware.authenticate(mockReq, mockRes, mockNext);
     expect(mockRes.status).toHaveBeenCalledWith(401);
     expect(mockRes.json).toHaveBeenCalledWith({ message: 'No token provided' });
     expect(mockNext).not.toHaveBeenCalled();
   });
 
-  it('should return 401 if token is malformed', () => {
-    mockReq.headers.authorization = 'Bearer';
-    authMiddleware.authenticate(mockReq, mockRes, mockNext);
-    expect(mockRes.status).toHaveBeenCalledWith(401);
-    expect(mockRes.json).toHaveBeenCalledWith({ message: 'Malformed authorization header' });
-    expect(mockNext).not.toHaveBeenCalled();
-  });
-
-  it('should return 401 if token is invalid', () => {
-    mockReq.headers.authorization = 'Bearer invalidtoken';
+  it('should return 401 if token is invalid', async () => {
+    mockReq.cookies.token = 'invalidtoken';
+    AuthModel.isTokenBlacklisted.mockResolvedValue(false);
     jwt.verify.mockImplementation(() => {
       const error = new Error('invalid');
       error.name = 'JsonWebTokenError';
       throw error;
     });
-    authMiddleware.authenticate(mockReq, mockRes, mockNext);
+    await authMiddleware.authenticate(mockReq, mockRes, mockNext);
     expect(jwt.verify).toHaveBeenCalled();
     expect(mockRes.status).toHaveBeenCalledWith(401);
     expect(mockRes.json).toHaveBeenCalledWith({ message: 'Invalid token' });
     expect(mockNext).not.toHaveBeenCalled();
   });
 
-  it('should return 401 if token is expired', () => {
-    mockReq.headers.authorization = 'Bearer expiredtoken';
+  it('should return 401 if token is expired', async () => {
+    mockReq.cookies.token = 'expiredtoken';
+    AuthModel.isTokenBlacklisted.mockResolvedValue(false);
     jwt.verify.mockImplementation(() => {
       const error = new Error('expired');
       error.name = 'TokenExpiredError';
       throw error;
     });
-    authMiddleware.authenticate(mockReq, mockRes, mockNext);
+    await authMiddleware.authenticate(mockReq, mockRes, mockNext);
     expect(jwt.verify).toHaveBeenCalled();
     expect(mockRes.status).toHaveBeenCalledWith(401);
     expect(mockRes.json).toHaveBeenCalledWith({ message: 'Token expired' });
     expect(mockNext).not.toHaveBeenCalled();
   });
 
-  it('should call next and set req.user if token is valid', () => {
+  it('should call next and set req.user if token is valid', async () => {
     const mockPayload = { userId: 1, businessId: 101, role: 'owner' };
-    mockReq.headers.authorization = 'Bearer validtoken';
+    mockReq.cookies.token = 'validtoken';
+    AuthModel.isTokenBlacklisted.mockResolvedValue(false);
     jwt.verify.mockReturnValue(mockPayload);
 
-    authMiddleware.authenticate(mockReq, mockRes, mockNext);
+    await authMiddleware.authenticate(mockReq, mockRes, mockNext);
 
     expect(jwt.verify).toHaveBeenCalledWith('validtoken', process.env.JWT_SECRET);
     expect(mockReq.user).toEqual({ id: 1, businessId: 101, role: 'owner' });
@@ -341,6 +348,7 @@ describe('Auth Middleware - ensureUserBelongsToBusiness', () => {
     };
     mockNext = jest.fn();
     jest.clearAllMocks();
+    pool.query.mockClear();
   });
 
   it('should return 400 if user ID is not provided', async () => {
