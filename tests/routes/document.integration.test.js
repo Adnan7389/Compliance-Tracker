@@ -43,7 +43,7 @@ describe('Document Routes - Integration', () => {
     const ownerLoginRes = await request(app)
       .post('/api/auth/login')
       .send({ email: 'owner@doctest.com', password: 'password123' });
-    ownerToken = ownerLoginRes.body.token;
+    ownerToken = ownerLoginRes.headers['set-cookie'];
 
     const taskRes = await pool.query(
       "INSERT INTO compliance_tasks (business_id, created_by, title, description, category, due_date) VALUES ($1, $2, 'Doc Test Task', 'Test Description', 'other', '2025-12-31') RETURNING id",
@@ -60,7 +60,7 @@ describe('Document Routes - Integration', () => {
     it('should upload a document to a task', async () => {
       const res = await request(app)
         .post(`/api/tasks/${taskId}/documents`)
-        .set('Authorization', `Bearer ${ownerToken}`)
+        .set('Cookie', ownerToken)
         .attach('file', testFilePath);
 
       expect(res.statusCode).toEqual(201);
@@ -75,12 +75,12 @@ describe('Document Routes - Integration', () => {
         // First upload a document to have something to fetch
         await request(app)
             .post(`/api/tasks/${taskId}/documents`)
-            .set('Authorization', `Bearer ${ownerToken}`)
+            .set('Cookie', ownerToken)
             .attach('file', testFilePath);
 
         const res = await request(app)
             .get(`/api/tasks/${taskId}/documents`)
-            .set('Authorization', `Bearer ${ownerToken}`);
+            .set('Cookie', ownerToken);
 
         expect(res.statusCode).toEqual(200);
         expect(Array.isArray(res.body.documents)).toBe(true);
@@ -92,13 +92,13 @@ describe('Document Routes - Integration', () => {
     it('should download a document', async () => {
         const uploadRes = await request(app)
             .post(`/api/tasks/${taskId}/documents`)
-            .set('Authorization', `Bearer ${ownerToken}`)
+            .set('Cookie', ownerToken)
             .attach('file', testFilePath);
         const docId = uploadRes.body.document.id;
 
         const res = await request(app)
             .get(`/api/documents/${docId}/download`)
-            .set('Authorization', `Bearer ${ownerToken}`);
+            .set('Cookie', ownerToken);
 
         expect(res.statusCode).toEqual(200);
         expect(res.headers['content-disposition']).toContain('attachment; filename="test-file.txt"');
@@ -109,13 +109,13 @@ describe('Document Routes - Integration', () => {
     it('should delete a document', async () => {
         const uploadRes = await request(app)
             .post(`/api/tasks/${taskId}/documents`)
-            .set('Authorization', `Bearer ${ownerToken}`)
+            .set('Cookie', ownerToken)
             .attach('file', testFilePath);
         const docId = uploadRes.body.document.id;
 
         const res = await request(app)
             .delete(`/api/documents/${docId}`)
-            .set('Authorization', `Bearer ${ownerToken}`);
+            .set('Cookie', ownerToken);
 
         expect(res.statusCode).toEqual(200);
         expect(res.body.message).toEqual('Document deleted successfully');
