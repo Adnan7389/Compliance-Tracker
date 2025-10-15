@@ -29,7 +29,7 @@ describe('Auth Routes - Integration', () => {
           password: 'password123',
         });
 
-      token = res.body.token;
+      token = res.headers['set-cookie'];
     });
 
     afterEach(async () => {
@@ -41,7 +41,7 @@ describe('Auth Routes - Integration', () => {
       // Logout the user
       const logoutRes = await request(app)
         .post('/api/auth/logout')
-        .set('Authorization', `Bearer ${token}`);
+        .set('Cookie', token);
 
       expect(logoutRes.statusCode).toEqual(200);
       expect(logoutRes.body.message).toEqual('Logout successful');
@@ -49,7 +49,7 @@ describe('Auth Routes - Integration', () => {
       // Try to access a protected route with the blacklisted token
       const profileRes = await request(app)
         .get('/api/auth/profile')
-        .set('Authorization', `Bearer ${token}`);
+        .set('Cookie', token);
 
       expect(profileRes.statusCode).toEqual(401);
       expect(profileRes.body.message).toEqual('Token is invalid');
