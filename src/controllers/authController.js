@@ -10,9 +10,9 @@ export const authController = {
       // Validate input
       const errors = validationResult(req);
       if (!errors.isEmpty()) {
-        return res.status(400).json({ 
-          message: 'Validation failed', 
-          errors: errors.array() 
+        return res.status(400).json({
+          message: 'Validation failed',
+          errors: errors.array()
         });
       }
 
@@ -21,14 +21,14 @@ export const authController = {
       // Check if user already exists
       const existingUser = await AuthModel.findUserByEmail(email);
       if (existingUser) {
-        return res.status(409).json({ 
-          message: 'User already exists with this email' 
+        return res.status(409).json({
+          message: 'User already exists with this email'
         });
       }
 
       // Hash password
       const password_hash = await bcrypt.hash(
-        password, 
+        password,
         parseInt(process.env.BCRYPT_ROUNDS) || 10
       );
 
@@ -52,14 +52,14 @@ export const authController = {
 
       // 4) Generate JWT token
       const token = jwt.sign(
-        { 
-          userId: user.id, 
-          businessId: business.id, 
-          role: 'owner' 
-        }, 
-        process.env.JWT_SECRET, 
-        { 
-          expiresIn: process.env.JWT_EXPIRES_IN || '7d' 
+        {
+          userId: user.id,
+          businessId: business.id,
+          role: 'owner'
+        },
+        process.env.JWT_SECRET,
+        {
+          expiresIn: process.env.JWT_EXPIRES_IN || '7d'
         }
       );
 
@@ -83,8 +83,8 @@ export const authController = {
 
     } catch (error) {
       console.error('Registration error:', error);
-      res.status(500).json({ 
-        message: 'Internal server error during registration' 
+      res.status(500).json({
+        message: 'Internal server error during registration'
       });
     }
   },
@@ -95,9 +95,9 @@ export const authController = {
       // Validate input
       const errors = validationResult(req);
       if (!errors.isEmpty()) {
-        return res.status(400).json({ 
-          message: 'Validation failed', 
-          errors: errors.array() 
+        return res.status(400).json({
+          message: 'Validation failed',
+          errors: errors.array()
         });
       }
 
@@ -106,29 +106,29 @@ export const authController = {
       // Find user by email
       const user = await AuthModel.findUserByEmail(email);
       if (!user) {
-        return res.status(401).json({ 
-          message: 'Invalid credentials' 
+        return res.status(401).json({
+          message: 'Invalid credentials'
         });
       }
 
       // Verify password
       const isPasswordValid = await bcrypt.compare(password, user.password_hash);
       if (!isPasswordValid) {
-        return res.status(401).json({ 
-          message: 'Invalid credentials' 
+        return res.status(401).json({
+          message: 'Invalid credentials'
         });
       }
 
       // Generate JWT token
       const token = jwt.sign(
-        { 
-          userId: user.id, 
-          businessId: user.business_id, 
-          role: user.role 
-        }, 
-        process.env.JWT_SECRET, 
-        { 
-          expiresIn: process.env.JWT_EXPIRES_IN || '7d' 
+        {
+          userId: user.id,
+          businessId: user.business_id,
+          role: user.role
+        },
+        process.env.JWT_SECRET,
+        {
+          expiresIn: process.env.JWT_EXPIRES_IN || '7d'
         }
       );
 
@@ -152,8 +152,8 @@ export const authController = {
 
     } catch (error) {
       console.error('Login error:', error);
-      res.status(500).json({ 
-        message: 'Internal server error during login' 
+      res.status(500).json({
+        message: 'Internal server error during login'
       });
     }
   },
@@ -163,8 +163,8 @@ export const authController = {
     try {
       const user = await AuthModel.findUserById(req.user.id);
       if (!user) {
-        return res.status(404).json({ 
-          message: 'User not found' 
+        return res.status(401).json({
+          message: 'User not found'
         });
       }
 
@@ -180,8 +180,8 @@ export const authController = {
 
     } catch (error) {
       console.error('Profile error:', error);
-      res.status(500).json({ 
-        message: 'Internal server error' 
+      res.status(500).json({
+        message: 'Internal server error'
       });
     }
   },
@@ -189,7 +189,7 @@ export const authController = {
   async logout(req, res) {
     try {
       const { token } = req.cookies;
-      
+
       if (token) {
         // Decode token to get expiration
         const decoded = jwt.decode(token);
@@ -199,7 +199,7 @@ export const authController = {
           await AuthModel.blacklistToken(token, expiresAt);
         }
       }
-      
+
       res.clearCookie('token');
       res.json({
         message: 'Logout successful',
