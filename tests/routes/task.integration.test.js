@@ -41,12 +41,12 @@ describe('Task Routes - Integration', () => {
     const ownerLoginRes = await request(app)
       .post('/api/auth/login')
       .send({ email: 'owner@tasktest.com', password: 'password123' });
-    ownerToken = ownerLoginRes.body.token;
+    ownerToken = ownerLoginRes.headers['set-cookie'];
 
     const staffLoginRes = await request(app)
       .post('/api/auth/login')
       .send({ email: 'staff@tasktest.com', password: 'password123' });
-    staffToken = staffLoginRes.body.token;
+    staffToken = staffLoginRes.headers['set-cookie'];
 
     const taskRes = await pool.query(
       "INSERT INTO compliance_tasks (business_id, created_by, title, description, category, due_date) VALUES ($1, $2, 'Test Task', 'Test Description', 'other', '2025-12-31') RETURNING id",
@@ -65,7 +65,7 @@ describe('Task Routes - Integration', () => {
     it('should allow an owner to create a task', async () => {
       const res = await request(app)
         .post('/api/tasks')
-        .set('Authorization', `Bearer ${ownerToken}`)
+        .set('Cookie', ownerToken)
         .send({
           title: 'New Task',
           description: 'New Description',
@@ -80,7 +80,7 @@ describe('Task Routes - Integration', () => {
     it('should not allow staff to create a task', async () => {
       const res = await request(app)
         .post('/api/tasks')
-        .set('Authorization', `Bearer ${staffToken}`)
+        .set('Cookie', staffToken)
         .send({ title: 'Staff Task', category: 'other', due_date: '2026-01-01' });
       expect(res.statusCode).toEqual(403);
     });
@@ -90,7 +90,7 @@ describe('Task Routes - Integration', () => {
     it('should allow an owner to get all tasks', async () => {
       const res = await request(app)
         .get('/api/tasks')
-        .set('Authorization', `Bearer ${ownerToken}`);
+        .set('Cookie', ownerToken);
       expect(res.statusCode).toEqual(200);
       expect(res.body.tasks.length).toBeGreaterThan(0);
     });
@@ -99,7 +99,7 @@ describe('Task Routes - Integration', () => {
       await pool.query('UPDATE compliance_tasks SET assigned_to = $1 WHERE id = $2', [staffId, taskId]);
       const res = await request(app)
         .get('/api/tasks')
-        .set('Authorization', `Bearer ${staffToken}`);
+        .set('Cookie', staffToken);
       expect(res.statusCode).toEqual(200);
       expect(res.body.tasks.length).toBeGreaterThan(0);
       expect(res.body.tasks[0].assigned_to).toEqual(staffId);
@@ -110,7 +110,7 @@ describe('Task Routes - Integration', () => {
     it('should allow an owner to get a task by id', async () => {
       const res = await request(app)
         .get(`/api/tasks/${taskId}`)
-        .set('Authorization', `Bearer ${ownerToken}`);
+        .set('Cookie', ownerToken);
       expect(res.statusCode).toEqual(200);
       expect(res.body.task.id).toEqual(taskId);
     });
@@ -118,7 +118,7 @@ describe('Task Routes - Integration', () => {
     it('should not allow staff to get a task not assigned to them', async () => {
         const res = await request(app)
             .get(`/api/tasks/${taskId}`)
-            .set('Authorization', `Bearer ${staffToken}`);
+            .set('Cookie', staffToken);
         expect(res.statusCode).toEqual(403);
     });
   });
@@ -127,7 +127,7 @@ describe('Task Routes - Integration', () => {
     it('should allow an owner to update a task', async () => {
       const res = await request(app)
         .put(`/api/tasks/${taskId}`)
-        .set('Authorization', `Bearer ${ownerToken}`)
+        .set('Cookie', ownerToken)
         .send({ title: 'Updated Task Title' });
       expect(res.statusCode).toEqual(200);
       expect(res.body.task.title).toEqual('Updated Task Title');
@@ -137,7 +137,7 @@ describe('Task Routes - Integration', () => {
         await pool.query('UPDATE compliance_tasks SET assigned_to = $1 WHERE id = $2', [staffId, taskId]);
         const res = await request(app)
             .put(`/api/tasks/${taskId}`)
-            .set('Authorization', `Bearer ${staffToken}`)
+            .set('Cookie', staffToken)
             .send({ status: 'completed' });
         expect(res.statusCode).toEqual(200);
         expect(res.body.task.status).toEqual('completed');
@@ -148,7 +148,7 @@ describe('Task Routes - Integration', () => {
     it('should allow an owner to delete a task', async () => {
       const res = await request(app)
         .delete(`/api/tasks/${taskId}`)
-        .set('Authorization', `Bearer ${ownerToken}`);
+        .set('Cookie', ownerToken);
       expect(res.statusCode).toEqual(200);
       expect(res.body.message).toEqual('Task deleted successfully');
     });
@@ -156,7 +156,7 @@ describe('Task Routes - Integration', () => {
     it('should not allow staff to delete a task', async () => {
       const res = await request(app)
         .delete(`/api/tasks/${taskId}`)
-        .set('Authorization', `Bearer ${staffToken}`);
+        .set('Cookie', staffToken);
       expect(res.statusCode).toEqual(403);
     });
   });
