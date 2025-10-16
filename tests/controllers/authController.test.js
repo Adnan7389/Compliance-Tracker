@@ -254,7 +254,7 @@ describe('Auth Controller', () => {
         role: 'owner',
         business_id: 1,
       };
-      req.userId = 1;
+      req.user = { id: 1 };
       AuthModel.findUserById.mockResolvedValue(user);
 
       await authController.getProfile(req, res);

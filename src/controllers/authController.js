@@ -161,7 +161,7 @@ export const authController = {
   // Get current user profile
   async getProfile(req, res) {
     try {
-      const user = await AuthModel.findUserById(req.userId);
+      const user = await AuthModel.findUserById(req.user.id);
       if (!user) {
         return res.status(404).json({ 
           message: 'User not found' 
