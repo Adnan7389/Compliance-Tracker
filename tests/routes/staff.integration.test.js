@@ -34,7 +34,7 @@ describe('Staff Routes - Integration', () => {
           email: 'owner@test.com',
           password: 'password123',
         });
-      ownerToken = res.body.token;
+      ownerToken = res.headers['set-cookie'];
     });
   
     afterEach(async () => {
@@ -44,7 +44,7 @@ describe('Staff Routes - Integration', () => {
     describe('POST /api/staff', () => {    it('should allow an owner to create a new staff member', async () => {
       const res = await request(app)
         .post('/api/staff')
-        .set('Authorization', `Bearer ${ownerToken}`)
+        .set('Cookie', ownerToken)
         .send({
           name: 'Test Staff',
           email: 'staff@test.com',
@@ -73,11 +73,11 @@ describe('Staff Routes - Integration', () => {
                 email: 'staff1@test.com',
                 password: 'password123',
             });
-        const staffToken = resLogin.body.token;
+        const staffToken = resLogin.headers['set-cookie'];
 
         const res = await request(app)
             .post('/api/staff')
-            .set('Authorization', `Bearer ${staffToken}`)
+            .set('Cookie', staffToken)
             .send({
                 name: 'Another Staff',
                 email: 'staff2@test.com',
@@ -93,7 +93,7 @@ describe('Staff Routes - Integration', () => {
     it('should allow an owner to get a list of staff members', async () => {
       const res = await request(app)
         .get('/api/staff')
-        .set('Authorization', `Bearer ${ownerToken}`);
+        .set('Cookie', ownerToken);
 
       expect(res.statusCode).toEqual(200);
       expect(res.body).toHaveProperty('staff');
@@ -116,7 +116,7 @@ describe('Staff Routes - Integration', () => {
     it('should allow an owner to get a specific staff member', async () => {
       const res = await request(app)
         .get(`/api/staff/${staffId}`)
-        .set('Authorization', `Bearer ${ownerToken}`);
+        .set('Cookie', ownerToken);
 
       expect(res.statusCode).toEqual(200);
       expect(res.body.staff).toHaveProperty('id', staffId);
@@ -128,7 +128,7 @@ describe('Staff Routes - Integration', () => {
         const nonExistentStaffId = 9999;
         const res = await request(app)
             .get(`/api/staff/${nonExistentStaffId}`)
-            .set('Authorization', `Bearer ${ownerToken}`);
+            .set('Cookie', ownerToken);
 
         expect(res.statusCode).toEqual(404);
         expect(res.body.message).toEqual('User not found or does not belong to your business');
