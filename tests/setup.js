@@ -1,7 +1,7 @@
 import { jest } from '@jest/globals';
 import fs from 'fs/promises';
 import path from 'path';
-import pg from 'pg';
+import { Pool } from 'pg';
 
 // Set the DATABASE_URL directly
 process.env.DATABASE_URL = 'postgresql://adnan:127389@localhost:5432/compliance_tracker_test';
@@ -17,8 +17,9 @@ if (process.env.TEST_TYPE === 'integration') {
   let pool;
   beforeAll(async () => {
     try {
-      const db = await import('../src/config/db.js');
-      pool = db.pool;
+      pool = new Pool({
+        connectionString: process.env.DATABASE_URL,
+      });
       // Read and execute schema
       const schemaPath = path.join(process.cwd(), 'schema.sql');
       const schemaSQL = await fs.readFile(schemaPath, 'utf-8');
