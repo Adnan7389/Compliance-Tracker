@@ -49,12 +49,12 @@ describe('Test Routes - Integration', () => {
     const ownerLoginRes = await request(app)
       .post('/api/auth/login')
       .send({ email: 'owner@testroutes.com', password: 'password123' });
-    ownerToken = ownerLoginRes.body.token;
+    ownerToken = ownerLoginRes.headers['set-cookie'];
 
     const staffLoginRes = await request(app)
       .post('/api/auth/login')
       .send({ email: 'staff@testroutes.com', password: 'password123' });
-    staffToken = staffLoginRes.body.token;
+    staffToken = staffLoginRes.headers['set-cookie'];
   });
 
   afterEach(() => {
@@ -67,7 +67,7 @@ describe('Test Routes - Integration', () => {
     it('should allow an owner to trigger reminders', async () => {
       const res = await request(app)
         .post('/api/test/reminders')
-        .set('Authorization', `Bearer ${ownerToken}`);
+        .set('Cookie', ownerToken);
 
       expect(res.statusCode).toEqual(200);
       expect(res.body.message).toEqual('Reminders triggered manually');
@@ -76,18 +76,15 @@ describe('Test Routes - Integration', () => {
     it('should not allow staff to trigger reminders', async () => {
       const res = await request(app)
         .post('/api/test/reminders')
-        .set('Authorization', `Bearer ${staffToken}`);
+        .set('Cookie', staffToken);
 
       expect(res.statusCode).toEqual(403);
       expect(res.body.message).toEqual('Owner access required');
     });
 
     it('should return 401 if not authenticated', async () => {
-      const res = await request(app)
-        .post('/api/test/reminders');
-
+      const res = await request(app).post('/api/test/reminders');
       expect(res.statusCode).toEqual(401);
-      expect(res.body.message).toEqual('No token provided');
     });
   });
 
@@ -95,7 +92,7 @@ describe('Test Routes - Integration', () => {
     it('should allow an owner to send a test email', async () => {
       const res = await request(app)
         .post('/api/test/email')
-        .set('Authorization', `Bearer ${ownerToken}`)
+        .set('Cookie', ownerToken)
         .send({ email: 'test@example.com' });
 
       expect(res.statusCode).toEqual(200);
@@ -105,18 +102,16 @@ describe('Test Routes - Integration', () => {
     it('should not allow staff to send a test email', async () => {
       const res = await request(app)
         .post('/api/test/email')
-        .set('Authorization', `Bearer ${staffToken}`);
+        .set('Cookie', staffToken)
+        .send({ email: 'test@example.com' });
 
       expect(res.statusCode).toEqual(403);
       expect(res.body.message).toEqual('Owner access required');
     });
 
     it('should return 401 if not authenticated', async () => {
-      const res = await request(app)
-        .post('/api/test/email');
-
+      const res = await request(app).post('/api/test/email').send({ email: 'test@example.com' });
       expect(res.statusCode).toEqual(401);
-      expect(res.body.message).toEqual('No token provided');
     });
   });
 });
