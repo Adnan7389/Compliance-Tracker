@@ -43,7 +43,7 @@ CREATE TABLE compliance_tasks (
   category TEXT CHECK (category IN ('license','tax','safety','other')),
   due_date DATE NOT NULL,
   recurrence TEXT CHECK (recurrence IN ('none','monthly','yearly')) DEFAULT 'none',
-  status TEXT CHECK (status IN ('pending','completed')) DEFAULT 'pending',
+  status TEXT CHECK (status IN ('pending','in_progress','completed')) DEFAULT 'pending',
   created_by INT REFERENCES users(id),
   created_at TIMESTAMP DEFAULT now(),
   updated_at TIMESTAMP DEFAULT now(),
