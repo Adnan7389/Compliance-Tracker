@@ -1,2 +1,0 @@
-ALTER TABLE compliance_tasks DROP CONSTRAINT compliance_tasks_status_check;
-ALTER TABLE compliance_tasks ADD CONSTRAINT compliance_tasks_status_check CHECK (status IN ('pending', 'in_progress', 'completed'));
