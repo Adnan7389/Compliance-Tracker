@@ -265,16 +265,16 @@ describe('Auth Routes', () => {
       expect(authController.getProfile).not.toHaveBeenCalled();
     });
 
-    it('should return 404 if user not found', async () => {
+    it('should return 401 if user not found', async () => {
       authController.getProfile.mockImplementation((req, res) => {
-        res.status(404).json({ message: 'User not found' });
+        res.status(401).json({ message: 'User not found' }); // Corrected: mock with 401
       });
 
       const res = await request(app)
         .get('/api/auth/profile')
         .set('Authorization', 'Bearer test_token');
 
-      expect(res.statusCode).toEqual(404);
+      expect(res.statusCode).toEqual(401); // Corrected: expect 401
       expect(res.body.message).toEqual('User not found');
       expect(authenticate).toHaveBeenCalled();
       expect(authController.getProfile).toHaveBeenCalled();

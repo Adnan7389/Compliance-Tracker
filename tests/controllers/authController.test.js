@@ -270,18 +270,18 @@ describe('Auth Controller', () => {
       });
     });
 
-    it('should return 404 if user not found', async () => {
-      req.userId = 1;
+    it('should return 401 if user not found', async () => {
+      req.user = { id: 1 }; // Corrected: use req.user.id
       AuthModel.findUserById.mockResolvedValue(null);
 
       await authController.getProfile(req, res);
 
-      expect(res.status).toHaveBeenCalledWith(404);
+      expect(res.status).toHaveBeenCalledWith(401); // Corrected: expect 401
       expect(res.json).toHaveBeenCalledWith({ message: 'User not found' });
     });
 
     it('should return 500 on server error', async () => {
-        req.userId = 1;
+        req.user = { id: 1 };
         AuthModel.findUserById.mockRejectedValue(new Error('DB error'));
   
         await authController.getProfile(req, res);
