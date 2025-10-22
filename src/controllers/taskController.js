@@ -160,14 +160,26 @@ export const taskController = {
         allowedFields = ['status', 'completed_at'];
         
         // Validate status transitions for staff
-        if (updates.status && !['in_progress', 'completed'].includes(updates.status)) {
+        const validStatuses = ['pending', 'in_progress', 'completed'];
+        if (updates.status && !validStatuses.includes(updates.status)) {
           return res.status(400).json({
-            message: 'Staff can only set status to "in_progress" or "completed"'
+            message: `Invalid status. Must be one of: ${validStatuses.join(', ')}`
           });
         }
       }
 
       const updatedTask = await TaskModel.updateTask(taskId, updates, allowedFields);
+
+      // If task is completed and has recurrence, create next instance
+      if (updatedTask && updatedTask.status === 'completed' && updatedTask.recurrence && updatedTask.recurrence !== 'none') {
+        try {
+          const nextRecurrenceTask = await TaskModel.createNextRecurrenceTask(updatedTask);
+          console.log('Next recurrence task created:', nextRecurrenceTask.id);
+        } catch (recurrenceError) {
+          console.error('Error creating next recurrence task:', recurrenceError);
+          // Optionally, handle this error more gracefully, e.g., notify admin
+        }
+      }
 
       res.json({
         message: 'Task updated successfully',

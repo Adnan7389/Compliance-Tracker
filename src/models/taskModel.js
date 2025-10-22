@@ -138,9 +138,14 @@ export const TaskModel = {
     // Only include allowed fields
     Object.keys(updates).forEach(field => {
       if (allowedFields.includes(field)) {
+        // Handle empty strings for timestamp fields by converting to null
+        const value = (field.endsWith('_at') || field === 'due_date') && updates[field] === '' 
+          ? null 
+          : updates[field];
+          
         paramCount++;
         fields.push(`${field} = $${paramCount}`);
-        values.push(updates[field]);
+        values.push(value);
       }
     });
 
@@ -171,5 +176,65 @@ export const TaskModel = {
     `;
     const result = await pool.query(query, [taskId, businessId]);
     return result.rows[0];
+  },
+
+  // Helper to calculate next due date based on recurrence
+  calculateNextDueDate(currentDueDate, recurrence) {
+    const date = new Date(currentDueDate);
+    switch (recurrence) {
+      case 'daily':
+        date.setDate(date.getDate() + 1);
+        break;
+      case 'weekly':
+        date.setDate(date.getDate() + 7);
+        break;
+      case 'monthly':
+        date.setMonth(date.getMonth() + 1);
+        break;
+      case 'yearly':
+        date.setFullYear(date.getFullYear() + 1);
+        break;
+      default:
+        return null; // No recurrence or unknown type
+    }
+    return date.toISOString().split('T')[0]; // Return in YYYY-MM-DD format
+  },
+
+  // Create next recurrence of a task
+  async createNextRecurrenceTask(previousTask) {
+    const {
+      business_id,
+      assigned_to,
+      title,
+      description,
+      category,
+      due_date,
+      recurrence,
+      created_by
+    } = previousTask;
+
+    if (!recurrence || recurrence === 'none') {
+      return null; // Not a recurring task
+    }
+
+    const nextDueDate = this.calculateNextDueDate(due_date, recurrence);
+
+    if (!nextDueDate) {
+      return null; // Could not calculate next due date
+    }
+
+    const newTaskData = {
+      business_id,
+      assigned_to,
+      title,
+      description,
+      category,
+      due_date: nextDueDate,
+      recurrence,
+      created_by,
+      status: 'pending' // New recurring task starts as pending
+    };
+
+    return this.createTask(newTaskData);
   }
 };

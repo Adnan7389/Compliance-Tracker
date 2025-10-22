@@ -160,4 +160,80 @@ describe('Task Routes - Integration', () => {
       expect(res.statusCode).toEqual(403);
     });
   });
+
+  describe('Task Recurrence', () => {
+    it('should create a new recurring task when a recurring task is completed', async () => {
+      // 1. Create a recurring task
+      const recurringTaskRes = await request(app)
+        .post('/api/tasks')
+        .set('Cookie', ownerToken)
+        .send({
+          title: 'Daily Recurring Task',
+          description: 'Complete daily',
+          category: 'daily',
+          due_date: '2025-10-26',
+          recurrence: 'daily',
+          assigned_to: staffId,
+        });
+      expect(recurringTaskRes.statusCode).toEqual(201);
+      const recurringTaskId = recurringTaskRes.body.task.id;
+
+      // 2. Mark the recurring task as completed
+      const completedTaskRes = await request(app)
+        .put(`/api/tasks/${recurringTaskId}`)
+        .set('Cookie', ownerToken)
+        .send({ status: 'completed' });
+      expect(completedTaskRes.statusCode).toEqual(200);
+      expect(completedTaskRes.body.task.status).toEqual('completed');
+
+      // 3. Verify that a new task was created with the next due date
+      const allTasksRes = await request(app)
+        .get('/api/tasks')
+        .set('Cookie', ownerToken);
+      
+      const newRecurringTask = allTasksRes.body.tasks.find(task => 
+        task.title === 'Daily Recurring Task' && 
+        task.status === 'pending' && 
+        task.due_date === '2025-10-27T00:00:00.000Z' // Due date should be next day
+      );
+      expect(newRecurringTask).toBeDefined();
+      expect(newRecurringTask.recurrence).toEqual('daily');
+    });
+
+    it('should not create a new task when a non-recurring task is completed', async () => {
+      // 1. Create a non-recurring task
+      const nonRecurringTaskRes = await request(app)
+        .post('/api/tasks')
+        .set('Cookie', ownerToken)
+        .send({
+          title: 'One-time Task',
+          description: 'Complete once',
+          category: 'other',
+          due_date: '2025-10-26',
+          recurrence: 'none',
+          assigned_to: staffId,
+        });
+      expect(nonRecurringTaskRes.statusCode).toEqual(201);
+      const nonRecurringTaskId = nonRecurringTaskRes.body.task.id;
+
+      // 2. Mark the non-recurring task as completed
+      const completedTaskRes = await request(app)
+        .put(`/api/tasks/${nonRecurringTaskId}`)
+        .set('Cookie', ownerToken)
+        .send({ status: 'completed' });
+      expect(completedTaskRes.statusCode).toEqual(200);
+      expect(completedTaskRes.body.task.status).toEqual('completed');
+
+      // 3. Verify that no new task was created
+      const allTasksRes = await request(app)
+        .get('/api/tasks')
+        .set('Cookie', ownerToken);
+      
+      const newNonRecurringTask = allTasksRes.body.tasks.find(task => 
+        task.title === 'One-time Task' && 
+        task.status === 'pending'
+      );
+      expect(newNonRecurringTask).toBeUndefined();
+    });
+  });
 });
