@@ -2,10 +2,14 @@
 import pg from "pg";
 const { Pool } = pg;
 
+const isTest = process.env.NODE_ENV === "test";
+
 const poolConfig = {
   user: String(process.env.DB_USER),
   host: String(process.env.DB_HOST),
-  database: String(process.env.DB_NAME),
+  database: isTest
+    ? "compliance_tracker_test"
+    : String(process.env.DB_NAME),
   password: String(process.env.DB_PASSWORD),
   port: parseInt(process.env.DB_PORT),
   max: 20,
