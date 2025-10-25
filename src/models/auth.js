@@ -39,9 +39,10 @@ export const AuthModel = {
   // Find user by email
   async findUserByEmail(email) {
     const query = `
-      SELECT id, name, email, password_hash, role, business_id 
-      FROM users 
-      WHERE email = $1
+      SELECT u.id, u.name, u.email, u.password_hash, u.role, u.business_id, b.name as business_name
+      FROM users u
+      LEFT JOIN businesses b ON u.business_id = b.id
+      WHERE u.email = $1
     `;
     const result = await pool.query(query, [email]);
     return result.rows[0];
@@ -50,9 +51,10 @@ export const AuthModel = {
   // Find user by ID
   async findUserById(id) {
     const query = `
-      SELECT id, name, email, role, business_id 
-      FROM users 
-      WHERE id = $1
+      SELECT u.id, u.name, u.email, u.role, u.business_id, b.name as business_name
+      FROM users u
+      LEFT JOIN businesses b ON u.business_id = b.id
+      WHERE u.id = $1
     `;
     const result = await pool.query(query, [id]);
     return result.rows[0];

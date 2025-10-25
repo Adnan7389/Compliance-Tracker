@@ -174,7 +174,8 @@ export const authController = {
           name: user.name,
           email: user.email,
           role: user.role,
-          businessId: user.business_id
+          businessId: user.business_id,
+          businessName: user.business_name
         }
       });
 
