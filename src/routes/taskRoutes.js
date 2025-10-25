@@ -3,7 +3,8 @@ import { taskController } from '../controllers/taskController.js';
 import { 
   authenticate, 
   ownerOnly, 
-  ensureTaskBelongsToBusiness 
+  ensureTaskBelongsToBusiness, 
+  ensureTaskAssignedToStaff 
 } from '../middleware/auth.js';
 import { 
   validateTaskCreation, 
@@ -33,6 +34,16 @@ router.get(
   validateTaskId,
   handleValidationErrors,
   asyncHandler(taskController.getTask)
+);
+
+// GET /api/tasks/:id/history - Owner and staff (with ownership check)
+router.get(
+  '/:id/history',
+  validateTaskId,
+  handleValidationErrors,
+  ensureTaskBelongsToBusiness,
+  ensureTaskAssignedToStaff,
+  asyncHandler(taskController.getTaskHistory)
 );
 
 // POST /api/tasks - Owner only

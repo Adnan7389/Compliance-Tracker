@@ -2,6 +2,7 @@ import request from 'supertest';
 import { app } from '../../src/app.js';
 import { pool } from '../../src/config/db.js';
 import * as bcrypt from 'bcrypt';
+import { format, addMonths, addYears } from 'date-fns';
 
 describe('Task Routes - Integration', () => {
   let ownerToken;
@@ -62,7 +63,7 @@ describe('Task Routes - Integration', () => {
 
 
   describe('POST /api/tasks', () => {
-    it('should allow an owner to create a task', async () => {
+    it('should allow an owner to create a a task', async () => {
       const res = await request(app)
         .post('/api/tasks')
         .set('Cookie', ownerToken)
@@ -70,7 +71,7 @@ describe('Task Routes - Integration', () => {
           title: 'New Task',
           description: 'New Description',
           category: 'tax',
-          due_date: '2026-01-01',
+          due_date: new Date(Date.UTC(2026, 0, 1)),
           assigned_to: staffId,
         });
       expect(res.statusCode).toEqual(201);
@@ -162,17 +163,17 @@ describe('Task Routes - Integration', () => {
   });
 
   describe('Task Recurrence', () => {
-    it('should create a new recurring task when a recurring task is completed', async () => {
+    it('should update the existing recurring task when completed', async () => {
       // 1. Create a recurring task
       const recurringTaskRes = await request(app)
         .post('/api/tasks')
         .set('Cookie', ownerToken)
         .send({
-          title: 'Daily Recurring Task',
-          description: 'Complete daily',
-          category: 'daily',
-          due_date: '2025-10-26',
-          recurrence: 'daily',
+          title: 'Monthly Recurring Task',
+          description: 'Complete monthly',
+          category: 'tax',
+          due_date: new Date(Date.UTC(2025, 9, 26)),
+          recurrence: 'monthly',
           assigned_to: staffId,
         });
       expect(recurringTaskRes.statusCode).toEqual(201);
@@ -184,20 +185,22 @@ describe('Task Routes - Integration', () => {
         .set('Cookie', ownerToken)
         .send({ status: 'completed' });
       expect(completedTaskRes.statusCode).toEqual(200);
-      expect(completedTaskRes.body.task.status).toEqual('completed');
 
-      // 3. Verify that a new task was created with the next due date
-      const allTasksRes = await request(app)
-        .get('/api/tasks')
+      // 3. Verify that the same task is updated with the next due date and status is pending
+      const updatedTaskRes = await request(app)
+        .get(`/api/tasks/${recurringTaskId}`)
         .set('Cookie', ownerToken);
-      
-      const newRecurringTask = allTasksRes.body.tasks.find(task => 
-        task.title === 'Daily Recurring Task' && 
-        task.status === 'pending' && 
-        task.due_date === '2025-10-27T00:00:00.000Z' // Due date should be next day
-      );
-      expect(newRecurringTask).toBeDefined();
-      expect(newRecurringTask.recurrence).toEqual('daily');
+
+      const expectedDate = addMonths(new Date(Date.UTC(2025, 9, 26)), 1);
+
+      expect(updatedTaskRes.body.task.due_date.split('T')[0]).toEqual(format(expectedDate, 'yyyy-MM-dd'));
+      expect(updatedTaskRes.body.task.status).toEqual('pending');
+
+      // 4. Verify that a record was added to the task_history table
+      const historyRes = await pool.query('SELECT * FROM task_history WHERE task_id = $1', [recurringTaskId]);
+      expect(historyRes.rows.length).toBe(1);
+      expect(historyRes.rows[0].previous_due_date).toEqual(new Date(Date.UTC(2025, 9, 26)));
+      expect(historyRes.rows[0].next_due_date).toEqual(new Date(Date.UTC(2025, 10, 26)));
     });
 
     it('should not create a new task when a non-recurring task is completed', async () => {
@@ -209,7 +212,7 @@ describe('Task Routes - Integration', () => {
           title: 'One-time Task',
           description: 'Complete once',
           category: 'other',
-          due_date: '2025-10-26',
+          due_date: new Date(Date.UTC(2025, 9, 26)),
           recurrence: 'none',
           assigned_to: staffId,
         });

@@ -122,6 +122,21 @@ export async function ensureTaskBelongsToBusiness(req, res, next) {
   }
 }
 
+// Ensure task is assigned to staff member
+export async function ensureTaskAssignedToStaff(req, res, next) {
+  if (req.user.role === 'owner') {
+    return next();
+  }
+
+  if (req.task.assigned_to !== req.user.id) {
+    return res.status(403).json({ 
+      message: 'Access denied: you can only view the history of tasks assigned to you' 
+    });
+  }
+
+  next();
+}
+
 // Ensure user belongs to same business (for staff management)
 export async function ensureUserBelongsToBusiness(req, res, next) {
   try {

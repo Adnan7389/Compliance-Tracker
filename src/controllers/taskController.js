@@ -170,14 +170,28 @@ export const taskController = {
 
       const updatedTask = await TaskModel.updateTask(taskId, updates, allowedFields);
 
-      // If task is completed and has recurrence, create next instance
-      if (updatedTask && updatedTask.status === 'completed' && updatedTask.recurrence && updatedTask.recurrence !== 'none') {
+      // If task is completed and has recurrence, log completion and update for next cycle
+      if (
+        updatedTask &&
+        updatedTask.status === 'completed' &&
+        updatedTask.recurrence &&
+        updatedTask.recurrence !== 'none'
+      ) {
         try {
-          const nextRecurrenceTask = await TaskModel.createNextRecurrenceTask(updatedTask);
-          console.log('Next recurrence task created:', nextRecurrenceTask.id);
-        } catch (recurrenceError) {
-          console.error('Error creating next recurrence task:', recurrenceError);
-          // Optionally, handle this error more gracefully, e.g., notify admin
+          // Log completion
+          await TaskModel.logTaskCompletion(updatedTask);
+
+          // Move due date forward and reset status
+          const nextDueDate = TaskModel.getNextDueDate(updatedTask.due_date, updatedTask.recurrence);
+          await TaskModel.updateTask(taskId, {
+            due_date: nextDueDate,
+            status: 'pending',
+            completed_at: null
+          }, ['due_date', 'status', 'completed_at']);
+
+          console.log(`Task ${taskId} advanced to next recurrence (${nextDueDate}).`);
+        } catch (err) {
+          console.error('Error logging recurrence:', err);
         }
       }
 
@@ -222,6 +236,23 @@ export const taskController = {
       console.error('Delete task error:', error);
       res.status(500).json({
         message: 'Failed to delete task'
+      });
+    }
+  },
+
+  // Get task history
+  async getTaskHistory(req, res) {
+    try {
+      const taskId = req.params.id;
+      const history = await TaskModel.getTaskHistory(taskId);
+      res.json({
+        message: 'Task history retrieved successfully',
+        history
+      });
+    } catch (error) {
+      console.error('Get task history error:', error);
+      res.status(500).json({
+        message: 'Failed to retrieve task history'
       });
     }
   }

@@ -1,4 +1,5 @@
 import { pool } from '../config/db.js';
+import { addMonths, addYears, formatISO } from 'date-fns';
 
 export const TaskModel = {
   // Validate staff assignment
@@ -178,63 +179,42 @@ export const TaskModel = {
     return result.rows[0];
   },
 
-  // Helper to calculate next due date based on recurrence
-  calculateNextDueDate(currentDueDate, recurrence) {
-    const date = new Date(currentDueDate);
-    switch (recurrence) {
-      case 'daily':
-        date.setDate(date.getDate() + 1);
-        break;
-      case 'weekly':
-        date.setDate(date.getDate() + 7);
-        break;
-      case 'monthly':
-        date.setMonth(date.getMonth() + 1);
-        break;
-      case 'yearly':
-        date.setFullYear(date.getFullYear() + 1);
-        break;
-      default:
-        return null; // No recurrence or unknown type
-    }
-    return date.toISOString().split('T')[0]; // Return in YYYY-MM-DD format
+  async logTaskCompletion(task) {
+    const query = `
+      INSERT INTO task_history (task_id, completed_by, previous_due_date, next_due_date)
+      VALUES ($1, $2, $3, $4)
+      RETURNING *;
+    `;
+    const nextDueDate = this.getNextDueDate(task.due_date, task.recurrence);
+    const values = [task.id, task.assigned_to, task.due_date, nextDueDate];
+    const result = await pool.query(query, values);
+    return result.rows[0];
   },
 
-  // Create next recurrence of a task
-  async createNextRecurrenceTask(previousTask) {
-    const {
-      business_id,
-      assigned_to,
-      title,
-      description,
-      category,
-      due_date,
-      recurrence,
-      created_by
-    } = previousTask;
-
-    if (!recurrence || recurrence === 'none') {
-      return null; // Not a recurring task
+  getNextDueDate(currentDate, recurrence) {
+    const date = new Date(currentDate);
+    let nextDate;
+    if (recurrence === 'monthly') {
+      nextDate = addMonths(date, 1);
+    } else if (recurrence === 'yearly') {
+      nextDate = addYears(date, 1);
+    } else {
+      return null;
     }
+    return formatISO(nextDate, { representation: 'date' });
+  },
 
-    const nextDueDate = this.calculateNextDueDate(due_date, recurrence);
-
-    if (!nextDueDate) {
-      return null; // Could not calculate next due date
-    }
-
-    const newTaskData = {
-      business_id,
-      assigned_to,
-      title,
-      description,
-      category,
-      due_date: nextDueDate,
-      recurrence,
-      created_by,
-      status: 'pending' // New recurring task starts as pending
-    };
-
-    return this.createTask(newTaskData);
+  async getTaskHistory(taskId) {
+    const query = `
+      SELECT 
+        th.*,
+        u.name as completed_by_name
+      FROM task_history th
+      LEFT JOIN users u ON th.completed_by = u.id
+      WHERE th.task_id = $1
+      ORDER BY th.completed_at DESC
+    `;
+    const result = await pool.query(query, [taskId]);
+    return result.rows;
   }
 };
