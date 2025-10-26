@@ -4,78 +4,69 @@ export const DashboardModel = {
   // Get owner dashboard statistics
   async getOwnerDashboard(businessId) {
     const query = `
-      SELECT
-        -- Task counts by status
-        COUNT(*) FILTER (WHERE status = 'pending') as pending_tasks,
-        COUNT(*) FILTER (WHERE status = 'in_progress') as in_progress_tasks,
-        COUNT(*) FILTER (WHERE status = 'completed') as completed_tasks,
-        COUNT(*) FILTER (WHERE status = 'cancelled') as cancelled_tasks,
-        COUNT(*) as total_tasks,
-        
-        -- Overdue tasks (pending + past due date)
-        COUNT(*) FILTER (WHERE status IN ('pending', 'in_progress') AND due_date < CURRENT_DATE) as overdue_tasks,
-        
-        -- Tasks due this week
-        COUNT(*) FILTER (WHERE due_date BETWEEN CURRENT_DATE AND (CURRENT_DATE + INTERVAL '7 days')) as due_this_week,
-        
-        -- Staff statistics
-        COUNT(DISTINCT assigned_to) FILTER (WHERE assigned_to IS NOT NULL) as active_staff_with_tasks,
-        
-        -- Completion rate
-        ROUND(
-          (COUNT(*) FILTER (WHERE status = 'completed') * 100.0 / NULLIF(COUNT(*), 0)
-        ), 2) as completion_rate,
-        
-        -- Average tasks per staff
-        ROUND(
-          COUNT(*) * 1.0 / NULLIF(COUNT(DISTINCT assigned_to) FILTER (WHERE assigned_to IS NOT NULL), 0)
-        , 2) as avg_tasks_per_staff
-        
+    WITH combined_tasks AS (
+      SELECT id, status, due_date, assigned_to
       FROM compliance_tasks
       WHERE business_id = $1
-    `;
-    
+
+      UNION ALL
+
+      SELECT th.task_id AS id, 'completed' AS status, th.completed_at AS due_date, t.assigned_to
+      FROM task_history th
+      JOIN compliance_tasks t ON t.id = th.task_id
+      WHERE t.business_id = $1
+    )
+    SELECT
+      COUNT(*) FILTER (WHERE status = 'pending') AS pending_tasks,
+      COUNT(*) FILTER (WHERE status = 'in_progress') AS in_progress_tasks,
+      COUNT(*) FILTER (WHERE status = 'completed') AS completed_tasks,
+      COUNT(*) FILTER (WHERE status = 'cancelled') AS cancelled_tasks,
+      COUNT(*) AS total_tasks,
+      COUNT(*) FILTER (WHERE status IN ('pending','in_progress') AND due_date < CURRENT_DATE) AS overdue_tasks,
+      COUNT(*) FILTER (WHERE due_date BETWEEN CURRENT_DATE AND (CURRENT_DATE + INTERVAL '7 days')) AS due_this_week,
+      COUNT(DISTINCT assigned_to) FILTER (WHERE assigned_to IS NOT NULL) AS active_staff_with_tasks,
+      ROUND((COUNT(*) FILTER (WHERE status = 'completed') * 100.0 / NULLIF(COUNT(*), 0)), 2) AS completion_rate,
+      ROUND(COUNT(*) * 1.0 / NULLIF(COUNT(DISTINCT assigned_to) FILTER (WHERE assigned_to IS NOT NULL), 0), 2) AS avg_tasks_per_staff
+    FROM combined_tasks
+  `;
     const result = await pool.query(query, [businessId]);
     return result.rows[0];
   },
 
   // Get staff dashboard statistics
-  async getStaffDashboard(staffId) {
-    const query = `
+    async getStaffDashboard(staffId) {
+      const query = `
+      WITH combined_tasks AS (
+        SELECT id, status, due_date
+        FROM compliance_tasks
+        WHERE assigned_to = $1
+  
+        UNION ALL
+  
+        SELECT th.task_id AS id, 'completed' AS status, th.completed_at AS due_date
+        FROM task_history th
+        JOIN compliance_tasks t ON t.id = th.task_id
+        WHERE t.assigned_to = $1
+      )
       SELECT
-        -- Task counts by status
-        COUNT(*) FILTER (WHERE status = 'pending') as pending_tasks,
-        COUNT(*) FILTER (WHERE status = 'in_progress') as in_progress_tasks,
-        COUNT(*) FILTER (WHERE status = 'completed') as completed_tasks,
-        COUNT(*) FILTER (WHERE status = 'cancelled') as cancelled_tasks,
-        COUNT(*) as total_tasks,
-        
-        -- Overdue tasks
-        COUNT(*) FILTER (WHERE status IN ('pending', 'in_progress') AND due_date < CURRENT_DATE) as overdue_tasks,
-        
-        -- Tasks due this week
-        COUNT(*) FILTER (WHERE due_date BETWEEN CURRENT_DATE AND (CURRENT_DATE + INTERVAL '7 days')) as due_this_week,
-        
-        -- Completion rate
-        ROUND(
-          (COUNT(*) FILTER (WHERE status = 'completed') * 100.0 / NULLIF(COUNT(*), 0)
-        ), 2) as completion_rate,
-        
-        -- Days until next due task
-        MIN(due_date) FILTER (WHERE status IN ('pending', 'in_progress')) as next_due_date
-        
-      FROM compliance_tasks
-      WHERE assigned_to = $1
+        COUNT(*) FILTER (WHERE status = 'pending') AS pending_tasks,
+        COUNT(*) FILTER (WHERE status = 'in_progress') AS in_progress_tasks,
+        COUNT(*) FILTER (WHERE status = 'completed') AS completed_tasks,
+        COUNT(*) FILTER (WHERE status = 'cancelled') AS cancelled_tasks,
+        COUNT(*) AS total_tasks,
+        COUNT(*) FILTER (WHERE status IN ('pending','in_progress') AND due_date < CURRENT_DATE) AS overdue_tasks,
+        COUNT(*) FILTER (WHERE due_date BETWEEN CURRENT_DATE AND (CURRENT_DATE + INTERVAL '7 days')) AS due_this_week,
+        ROUND((COUNT(*) FILTER (WHERE status = 'completed') * 100.0 / NULLIF(COUNT(*), 0)), 2) AS completion_rate,
+        MIN(due_date) FILTER (WHERE status IN ('pending','in_progress')) AS next_due_date
+      FROM combined_tasks
     `;
-    
     const result = await pool.query(query, [staffId]);
     return result.rows[0];
-  },
-
+    },
   // Get recent activity (last 7 days)
   async getRecentActivity(businessId, userId, role) {
     let query, params;
-    
+
     if (role === 'owner') {
       query = `
         SELECT 
@@ -178,7 +169,7 @@ export const DashboardModel = {
       `;
       params = [userId];
     }
-    
+
     const result = await pool.query(query, params);
     return result.rows;
   },
@@ -186,7 +177,7 @@ export const DashboardModel = {
   // Get task distribution by category
   async getTaskDistribution(businessId, userId, role) {
     let query, params;
-    
+
     if (role === 'owner') {
       query = `
         SELECT 
@@ -214,7 +205,7 @@ export const DashboardModel = {
       `;
       params = [userId];
     }
-    
+
     const result = await pool.query(query, params);
     return result.rows;
   },
@@ -222,7 +213,7 @@ export const DashboardModel = {
   // Get upcoming deadlines (next 7 days)
   async getUpcomingDeadlines(businessId, userId, role) {
     let query, params;
-    
+
     if (role === 'owner') {
       query = `
         SELECT 
@@ -257,7 +248,7 @@ export const DashboardModel = {
       `;
       params = [userId];
     }
-    
+
     const result = await pool.query(query, params);
     return result.rows;
   }
