@@ -7,7 +7,7 @@
     "test": "NODE_ENV=test node --experimental-vm-modules node_modules/jest/bin/jest.js --runInBand --verbose",
     "start": "node src/server.js",
     "dev": "nodemon src/server.js",
-    "migrate": "for f in migrations/*.sql; do psql $DATABASE_URL -f $f; done",
+    "migrate": "node scripts/migrate.js",
     "test:db": "NODE_ENV=test TEST_TYPE=integration DATABASE_URL=postgresql://adnan:127389@localhost:5432/compliance_tracker_test node --experimental-vm-modules node_modules/jest/bin/jest.js tests/db.test.js --verbose",
     "test:db:watch": "NODE_ENV=test node --experimental-vm-modules node_modules/jest/bin/jest.js tests/db.test.js --watch",
     "test:db:coverage": "NODE_ENV=test node --experimental-vm-modules node_modules/jest/bin/jest.js tests/db.test.js --coverage",
