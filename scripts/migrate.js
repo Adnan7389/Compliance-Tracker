@@ -1,4 +1,4 @@
-import { getPool } from '../src/config/db.js';
+import { pool } from '../src/config/db.js';
 import fs from 'fs/promises';
 import path from 'path';
 
@@ -25,7 +25,6 @@ async function migrate() {
     process.exit(1);
   } finally {
     await client.release();
-    await pool.end();
   }
 }
 
