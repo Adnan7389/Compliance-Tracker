@@ -1,4 +1,4 @@
-
+import '../src/config/env.js';
 import { pool } from '../src/config/db.js';
 import fs from 'fs/promises';
 import path from 'path';
