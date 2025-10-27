@@ -1,4 +1,4 @@
-import * as bcrypt from 'bcrypt';
+import bcrypt from 'bcryptjs';
 import { StaffModel } from '../models/staffModel.js';
 
 export const staffController = {
