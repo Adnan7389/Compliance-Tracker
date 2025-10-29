@@ -7,6 +7,13 @@ const __dirname = path.dirname(new URL(import.meta.url).pathname);
 async function migrate() {
   const client = await pool.connect();
   try {
+    // Run schema.sql first
+    const schemaSqlPath = path.join(__dirname, '../schema.sql');
+    console.log('Running schema.sql...');
+    const schemaSql = await fs.readFile(schemaSqlPath, 'utf-8');
+    await client.query(schemaSql);
+    console.log('schema.sql completed.');
+
     const migrationsDir = path.join(__dirname, '../migrations');
     const files = await fs.readdir(migrationsDir);
     files.sort();
