@@ -1,7 +1,18 @@
-// src/config/env.js
+import dotenv from 'dotenv';
 
+dotenv.config();
 
-// Validate required environment variables
+const requiredEnvVars = [
+    'DATABASE_URL',
+    'JWT_SECRET',
+    'CORS_ORIGIN',
+    'BCRYPT_ROUNDS',
+];
 
+const missingEnvVars = requiredEnvVars.filter(varName => !process.env[varName]);
 
-console.log('✅ Environment variables loaded');
+if (missingEnvVars.length > 0) {
+    throw new Error(`Missing required environment variables: ${missingEnvVars.join(', ')}`);
+}
+
+console.log('✅ Environment variables loaded and validated');
