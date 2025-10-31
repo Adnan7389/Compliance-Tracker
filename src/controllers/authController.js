@@ -66,7 +66,7 @@ export const authController = {
       res.cookie('token', token, {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production', // Use secure cookies in production
-        sameSite: 'strict', // Prevent CSRF attacks
+        sameSite: 'none', // Allow cross-domain cookies
         maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
       });
 
@@ -135,7 +135,7 @@ export const authController = {
       res.cookie('token', token, {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production', // Use secure cookies in production
-        sameSite: 'strict', // Prevent CSRF attacks
+        sameSite: 'none', // Prevent CSRF attacks
         maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
       });
 
