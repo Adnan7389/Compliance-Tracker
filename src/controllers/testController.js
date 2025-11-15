@@ -72,4 +72,38 @@ export const testController = {
       });
     }
   },
+
+  // Test email service for production (owner only)
+  async testProductionEmail(req, res) {
+    try {
+      const { email } = req.user; // Use owner's email from token
+
+      // Verify SMTP connection
+      const connectionOk = await emailService.verifyConnection();
+      if (!connectionOk) {
+        return res.status(500).json({
+          message: 'SMTP connection could not be verified. Check email service configuration.'
+        });
+      }
+
+      // Send test email
+      await emailService.sendMail({
+        to: email,
+        subject: '✅ Compliance Tracker - Production Test Email',
+        text: 'This is a test email from your Compliance Tracker production system. If you receive this, the email service is working correctly.'
+      });
+
+      res.json({
+        message: 'Production test email sent successfully.',
+        to: email
+      });
+
+    } catch (error) {
+      console.error('Production email test error:', error);
+      res.status(500).json({
+        message: 'Failed to send production test email',
+        error: error.message
+      });
+    }
+  }
 };

@@ -24,4 +24,13 @@ if (process.env.NODE_ENV !== 'production') {
   );
 }
 
+// Production-safe test routes
+// POST /api/test/prod-email-test - Send test email to owner
+router.post(
+  '/test/prod-email-test',
+  authenticate,
+  ownerOnly,
+  asyncHandler(testController.testProductionEmail)
+);
+
 export default router;
