@@ -62,14 +62,20 @@ Best regards,
 Compliance Tracker System
           `.trim();
 
-          // Send to staff and BCC to owner
-          await emailService.sendMail({
+          const mailOptions = {
             to: task.staff_email,
             bcc: task.owner_email,
             subject,
             text,
-          });
+          };
 
+          console.log(`[DEBUG] Preparing to send email for task ${task.id} with options:`, JSON.stringify(mailOptions, null, 2));
+          console.log(`[DEBUG] Calling emailService.sendMail for task ${task.id}...`);
+          
+          // Send to staff and BCC to owner
+          await emailService.sendMail(mailOptions);
+
+          console.log(`[DEBUG] emailService.sendMail for task ${task.id} completed.`);
           sentCount++;
           console.log(`✅ Reminder sent for task: ${task.title}`);
           
@@ -137,14 +143,20 @@ Best regards,
 Compliance Tracker System
           `.trim();
 
-          // Send to staff and BCC to owner
-          await emailService.sendMail({
+          const mailOptions = {
             to: task.staff_email,
             bcc: task.owner_email,
             subject,
             text,
-          });
+          };
 
+          console.log(`[DEBUG] Preparing to send overdue email for task ${task.id} with options:`, JSON.stringify(mailOptions, null, 2));
+          console.log(`[DEBUG] Calling emailService.sendMail for overdue task ${task.id}...`);
+
+          // Send to staff and BCC to owner
+          await emailService.sendMail(mailOptions);
+
+          console.log(`[DEBUG] emailService.sendMail for overdue task ${task.id} completed.`);
           sentCount++;
           console.log(`✅ Overdue notification sent for task: ${task.title}`);
           
