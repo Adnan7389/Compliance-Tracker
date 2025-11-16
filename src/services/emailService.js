@@ -3,12 +3,13 @@ import nodemailer from 'nodemailer';
 // Create transporter for Gmail SMTP
 const transporter = nodemailer.createTransport({
   host: process.env.SMTP_HOST || 'smtp.gmail.com',
-  port: parseInt(process.env.SMTP_PORT) || 465, // Changed to 465 for implicit TLS
-  secure: true, // Use implicit TLS
+  port: parseInt(process.env.SMTP_PORT) || 587, // Changed back to 587
+  secure: false, // Changed back to false for STARTTLS
   auth: {
     user: process.env.SMTP_USER,
     pass: process.env.SMTP_PASS, // Use App Password for Gmail
   },
+  requireTLS: true, // Explicitly require TLS
   logger: true, // Enable logging for debugging
 });
 
