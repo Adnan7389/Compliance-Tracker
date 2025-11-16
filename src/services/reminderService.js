@@ -31,6 +31,13 @@ export const reminderService = {
       const { rows: tasks } = await pool.query(query);
       console.log(`📧 Found ${tasks.length} tasks due in next 7 days`);
 
+      if (tasks.length > 0) {
+        console.log('🔍 Details of upcoming tasks found:');
+        tasks.forEach(task => {
+          console.log(`  - Task ID: ${task.id}, Title: "${task.title}", Due: ${task.due_date.toISOString().split('T')[0]}, Status: 'pending'`);
+        });
+      }
+
       let sentCount = 0;
       
       for (const task of tasks) {
