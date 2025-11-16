@@ -41,6 +41,7 @@ export const reminderService = {
       let sentCount = 0;
       
       for (const task of tasks) {
+        console.log(`Attempting to send reminder for Task ID: ${task.id}, To: ${task.staff_email}, BCC: ${task.owner_email}`);
         try {
           const daysUntilDue = Math.ceil((new Date(task.due_date) - new Date()) / (1000 * 60 * 60 * 24));
           
