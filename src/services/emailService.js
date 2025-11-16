@@ -10,6 +10,8 @@ const transporter = nodemailer.createTransport({
     pass: process.env.SMTP_PASS, // Use App Password for Gmail
   },
   requireTLS: true, // Explicitly require TLS
+  connectionTimeout: 300000, // 5 minutes
+  socketTimeout: 300000, // 5 minutes
   logger: true, // Enable logging for debugging
 });
 
