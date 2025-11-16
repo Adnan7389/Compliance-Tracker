@@ -14,9 +14,8 @@ export const cronService = {
     console.log('⏰ Initializing cron jobs...');
 
     // Daily at 9:00 AM - Send reminders
-    // TODO: Revert this back to '0 9 * * *' after debugging
-    cron.schedule('*/5 * * * *', async () => { // Changed to every 5 minutes
-      console.log('🕘 Running scheduled reminders every 5 minutes for debugging');
+    cron.schedule('0 9 * * *', async () => { // Changed to daily at 9:00 AM
+      console.log('🕘 Running scheduled reminders daily at 9:00 AM');
       try {
         await reminderService.runAllReminders();
       } catch (error) {
@@ -24,7 +23,7 @@ export const cronService = {
       }
     });
 
-    console.log('✅ Cron jobs scheduled: Reminders running every 5 minutes for debugging');
+    console.log('✅ Cron jobs scheduled: Reminders running daily at 9:00 AM');
   },
 
   // Manual trigger for testing
